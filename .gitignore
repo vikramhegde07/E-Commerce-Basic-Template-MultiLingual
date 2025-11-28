@@ -14,8 +14,8 @@ node_modules/
 /backend/writable/
 /backend/tests/
 /backend/system/
-/frontend/public/brochures/
 
+brochures/
 
 # testing
 /coverage
