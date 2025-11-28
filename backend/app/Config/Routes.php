@@ -56,6 +56,26 @@ $routes->group('api/inquiries', ['filter' => ['jwtAuth', 'adminOnly']], static f
     $routes->delete('(:num)', 'Api\Inquiries::delete/$1'); // remove
 });
 
+//-------------------------------------------------------------------
+// ------------ Banner Related Routes --------------------------------
+//-------------------------------------------------------------------
+// --- Public
+$routes->group('api/public', static function ($routes) {
+    $routes->get('banners/active', 'Public\Banners::active');
+});
+
+// --- Private (JWT: list/show/create/update)
+$routes->group('api/banners', ['filter' => ['jwtAuth']], static function ($routes) {
+    $routes->get('/', 'Api\Banners::index');          // list with search/pagination/filters
+    $routes->get('(:num)', 'Api\Banners::show/$1');   // get one
+    $routes->post('/', 'Api\Banners::create');        // create (multipart preferred)
+    $routes->put('(:num)', 'Api\Banners::update/$1'); // update (schedule/permanent/active/sort)
+});
+
+// --- Admin-only delete
+$routes->group('api/banners', ['filter' => ['jwtAuth', 'adminOnly']], static function ($routes) {
+    $routes->delete('(:num)', 'Api\Banners::delete/$1');
+});
 
 //----------------------------------------------------------------------
 // ------------ Category Related Routes --------------------------------
@@ -126,21 +146,26 @@ $routes->group('api/admin', ['namespace' => 'App\Controllers\Api\Admin'], static
     $routes->put('products/(:num)/contents/lists/(:num)', 'ProductContents::replaceList/$1/$2');      // body: { locale, data{ slug?, title*, description?, items[], sort_order? } }
     // Delete an entire list (all locales + items)
     $routes->delete('products/(:num)/contents/lists/(:num)', 'ProductContents::deleteList/$1/$2');
+    // Delete an entire list (Only recieved locales + items)
+    $routes->delete('products/(:num)/contents/lists/(:num)/(:segment)', 'ProductContents::deleteListLocale/$1/$2/$3');
 
     // -------- Spec Groups --------
     $routes->post('products/(:num)/contents/spec-groups', 'ProductContents::createSpecGroup/$1');               // body: { locale, data{ slug?, title*, description?, items[{key,value,unit?}], sort_order? } }
     $routes->put('products/(:num)/contents/spec-groups/(:num)', 'ProductContents::replaceSpecGroup/$1/$2');     // body: { locale, data{ slug?, title*, description?, items[], sort_order? } }
     $routes->delete('products/(:num)/contents/spec-groups/(:num)', 'ProductContents::deleteSpecGroup/$1/$2');
+    $routes->delete('products/(:num)/contents/spec-groups/(:num)/(:segment)', 'ProductContents::deleteSpecGroupLocale/$1/$2/$3');
 
     // -------- Tables --------
     $routes->post('products/(:num)/contents/tables', 'ProductContents::createTable/$1');                         // body: { locale, data{ title*, subtitle?, columns[], rows[], notes?, sort_order? } }
     $routes->put('products/(:num)/contents/tables/(:num)', 'ProductContents::replaceTable/$1/$2');               // body: { locale, data{ title*, subtitle?, columns[], rows[], notes?, sort_order? } }
     $routes->delete('products/(:num)/contents/tables/(:num)', 'ProductContents::deleteTable/$1/$2');
+    $routes->delete('products/(:num)/contents/tables/(:num)/(:segment)', 'ProductContents::deleteTableLocale/$1/$2/$3');
 
     // -------- Paragraphs --------
     $routes->post('products/(:num)/contents/paragraphs', 'ProductContents::createParagraph/$1');                 // body: { locale, data{ title?, subtitle?, full_text?, sort_order? } }
     $routes->put('products/(:num)/contents/paragraphs/(:num)', 'ProductContents::replaceParagraph/$1/$2');       // body: { locale, data{ title?, subtitle?, full_text?, sort_order? } }
     $routes->delete('products/(:num)/contents/paragraphs/(:num)', 'ProductContents::deleteParagraph/$1/$2');
+    $routes->delete('products/(:num)/contents/paragraphs/(:num)/(:segment)', 'ProductContents::deleteParagraphLocale/$1/$2/$3');
     $routes->delete('products/(:num)', 'Products::deleteProduct/$1'); // hard delete a product
 });
 

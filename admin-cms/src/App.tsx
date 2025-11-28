@@ -15,6 +15,7 @@ import ProductDetails from './pages/product/ProductDetails';
 import ProductList from './pages/product/ProductList';
 import Inquiry from './pages/Inquiry';
 import ProductPreview from './pages/product/ProductPreview';
+import Banners from './pages/Banners';
 // import MaterialPreview from './pages/Material/MaterialPreview';
 // import MaterialDetails from './pages/Material/MaterialDetails';
 // import MaterialsList from './pages/Material/MaterialsList';
@@ -53,6 +54,7 @@ function App() {
             <Route path='/product/:slug' element={<ProductDetails />} />
             <Route path='/product/:slug/preview' element={<ProductPreview />} />
             <Route path='/inquiries' element={<Inquiry />} />
+            <Route path='/banners' element={<Banners />} />
             {/* <Route path='/materials' element={<MaterialsList />} />
             <Route path='/materials/:slug' element={<MaterialDetails />} />
             <Route path='/materials/:slug/preview' element={<MaterialPreview />} /> */}

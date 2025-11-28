@@ -22,4 +22,10 @@ class ProductContentParagraphTranslationModel extends BaseAppModel
         'locale'       => 'required|max_length[10]',
         'full_text'    => 'required'
     ];
+
+
+    public function byParaAndLocale(int $paragraphId, string $locale): ?array
+    {
+        return $this->where('paragraph_id', $paragraphId)->where('locale', $locale)->first();
+    }
 }

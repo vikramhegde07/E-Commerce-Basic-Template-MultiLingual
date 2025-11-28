@@ -34,7 +34,7 @@ const TEXTS = {
 
 export default function ContactCTA({
     uaeAddress = 'Industrial Area, UAE',
-    phone = '+971-000-0000',
+    phone = '+971 06 573 3816',
     email = 'sales@primeconnects.com',
 }: ContactCTAProps) {
     const { locale, dir } = useLanguage();
@@ -57,7 +57,7 @@ export default function ContactCTA({
                     <div className="rounded-2xl bg-white/10 p-4">
                         <div className="flex items-center gap-2">
                             <Phone className="w-5 h-5" />
-                            <a className="underline-offset-2 hover:underline" href={`tel:${phone}`}>{phone}</a>
+                            <a className="underline-offset-2 hover:underline" href={`tel:${phone.replace(/\s+/g, "")}`}>{phone}</a>
                         </div>
                     </div>
                     <div className="rounded-2xl bg-white/10 p-4">

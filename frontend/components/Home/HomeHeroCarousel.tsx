@@ -12,33 +12,58 @@ import {
 } from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/LanguageContext';
+import { api as apiEndPoint } from '@/lib/axios';
 
 type HomeHeroCarouselProps = {
-    urls: string[];
     aspect?: `${number}/${number}` | string;
     altBase?: string;
 };
+type Banner = {
+    id: string | number;
+    image_url: string | null;
+    is_permanent: string | boolean;
+    is_active: string | boolean | null;
+};
 
 export default function HomeHeroCarousel({
-    urls,
-    aspect = '16/9',
+    aspect = '16/8',
     altBase = 'Hero slide',
 }: HomeHeroCarouselProps) {
     const { dir } = useLanguage();
 
     // 👇 state typed to CarouselApi | null
     const [api, setApi] = React.useState<CarouselApi | null>(null);
+    const [banners, setBanners] = React.useState<Banner[]>([]);
 
-    // 👇 adapter to satisfy setApi?: (api: CarouselApi | undefined) => void
+    // --- fetchers (independent, robust) ---
+    React.useEffect(() => {
+        let mounted = true;
+
+        const fetchBanners = async () => {
+            try {
+                const res = await apiEndPoint.get('/api/public/banners/active');
+                setBanners(res.data)
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        fetchBanners();
+        return () => { mounted = false; };
+    }, []);
+
     const handleSetApi = React.useCallback((next?: CarouselApi) => {
         setApi(next ?? null);
     }, []);
 
     const onPrev = React.useCallback(() => api?.scrollPrev(), [api]);
     const onNext = React.useCallback(() => api?.scrollNext(), [api]);
-
-    const slides = urls.length ? urls : ['/hero-placeholder.jpg'];
-
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL as string || "";
+    const absUrl = (url?: string | null) => {
+        if (!url) return "";
+        if (/^https?:\/\//i.test(url)) return url;
+        return API_BASE + url;
+    };
     return (
         <section className="relative w-full" dir={dir}>
             <Carousel
@@ -47,12 +72,12 @@ export default function HomeHeroCarousel({
                 className="w-full"
             >
                 <CarouselContent>
-                    {slides.map((src, i) => (
-                        <CarouselItem key={`${src}-${i}`} className="relative">
+                    {banners.map((banner, i) => (
+                        <CarouselItem key={`${banner.id}`} className="relative">
                             <div className="relative w-full overflow-hidden" style={{ aspectRatio: aspect }}>
                                 <Image
-                                    src={src}
-                                    alt={`${altBase} ${i + 1}`}
+                                    src={absUrl(banner.image_url)}
+                                    alt={`Banner - ${i + 1}`}
                                     fill
                                     className="object-contain"
                                     priority={i === 0}

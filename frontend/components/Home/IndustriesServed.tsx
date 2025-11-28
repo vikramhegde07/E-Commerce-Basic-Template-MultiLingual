@@ -91,9 +91,7 @@ export default function IndustriesServed() {
                 {/* Grid */}
                 <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {items.map((it) => (
-                        <Link
-                            key={it.id}
-                            href={it.href}
+                        <div
                             className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 shadow-sm transition-transform duration-500 hover:-translate-y-1"
                         >
                             <div className="flex items-start gap-3">
@@ -112,7 +110,7 @@ export default function IndustriesServed() {
                                     </span>
                                 </div>
                             </div>
-                        </Link>
+                        </div>
                     ))}
                 </div>
 

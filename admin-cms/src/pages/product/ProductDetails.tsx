@@ -18,6 +18,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/context/LangContext";
+import { TableEditor } from "@/components/ProductDetails/ContentEditors";
 
 // -------------------- Types (aligned with our admin bundle) --------------------
 type ImageItem = {
@@ -261,6 +262,12 @@ const ProductDetails: React.FC = () => {
 
     // Local reorder tracker for blocks
     const [pendingBlocks, setPendingBlocks] = useState<LayoutBlock[] | null>(null);
+
+    // which content block should be deleted (and how)
+    const [deleteTarget, setDeleteTarget] = useState<{
+        type: "paragraph" | "list" | "spec_group" | "table";
+        id: number;
+    } | null>(null);
 
     const API_BASE = import.meta.env.VITE_API_BASE || "";
 
@@ -566,21 +573,57 @@ const ProductDetails: React.FC = () => {
     };
 
     // --------------------------- Delete block ---------------------------
+    // Step 1: clicking the trash icon only opens the dialog
     const deleteBlock = async (type: "paragraph" | "list" | "spec_group" | "table", id: number) => {
         if (!bundle) return;
-        if (!confirm("Delete this content group? This cannot be undone.")) return;
+        setDeleteTarget({ type, id });
+    };
+
+    // Step 2: actual delete (all or current locale)
+    const performDelete = async (mode: "all" | "locale") => {
+        if (!bundle || !deleteTarget) return;
+
+        const pid = bundle.meta.id;
+        const { type, id } = deleteTarget;
+
         try {
             setLoading(true);
-            if (type === "paragraph") {
-                await client.delete(`/api/admin/products/${bundle.meta.id}/contents/paragraphs/${id}`);
-            } else if (type === "list") {
-                await client.delete(`/api/admin/products/${bundle.meta.id}/contents/lists/${id}`);
-            } else if (type === "spec_group") {
-                await client.delete(`/api/admin/products/${bundle.meta.id}/contents/spec-groups/${id}`);
-            } else if (type === "table") {
-                await client.delete(`/api/admin/products/${bundle.meta.id}/contents/tables/${id}`);
+
+            if (mode === "all") {
+                // existing behaviour: delete block + layout references
+                if (type === "paragraph") {
+                    await client.delete(`/api/admin/products/${pid}/contents/paragraphs/${id}`);
+                } else if (type === "list") {
+                    await client.delete(`/api/admin/products/${pid}/contents/lists/${id}`);
+                } else if (type === "spec_group") {
+                    await client.delete(`/api/admin/products/${pid}/contents/spec-groups/${id}`);
+                } else if (type === "table") {
+                    await client.delete(`/api/admin/products/${pid}/contents/tables/${id}`);
+                }
+                toast.success("Content block deleted");
+            } else {
+                // mode === "locale" → delete only current locale translation
+                // backend routes like:
+                // products/{pid}/contents/lists/{listId}/{locale}
+                // products/{pid}/contents/paragraphs/{id}/{locale}
+                // products/{pid}/contents/spec-groups/{id}/{locale}
+                // products/{pid}/contents/tables/{id}/{locale}
+                const encodedLocale = encodeURIComponent(locale);
+
+                if (type === "paragraph") {
+                    await client.delete(`/api/admin/products/${pid}/contents/paragraphs/${id}/${encodedLocale}`);
+                } else if (type === "list") {
+                    await client.delete(`/api/admin/products/${pid}/contents/lists/${id}/${encodedLocale}`);
+                } else if (type === "spec_group") {
+                    await client.delete(`/api/admin/products/${pid}/contents/spec-groups/${id}/${encodedLocale}`);
+                } else if (type === "table") {
+                    await client.delete(`/api/admin/products/${pid}/contents/tables/${id}/${encodedLocale}`);
+                }
+
+                toast.success(`Translation (${locale}) deleted`);
             }
-            toast.success("Deleted");
+
+            setDeleteTarget(null);
             await load();
         } catch (err: any) {
             toast.error(err?.response?.data?.error || "Delete failed");
@@ -588,6 +631,7 @@ const ProductDetails: React.FC = () => {
             setLoading(false);
         }
     };
+
 
     // --------------------------- Renderers ---------------------------
     const BlockToolbar: React.FC<{ block: LayoutBlock; onEdit?: () => void; onDelete?: () => void }> = ({ block, onEdit, onDelete }) => (
@@ -1119,6 +1163,58 @@ const ProductDetails: React.FC = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete content dialog */}
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => {
+                    if (!open) setDeleteTarget(null);
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Delete content</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-3 text-sm">
+                        <p>What do you want to delete for this block?</p>
+                        <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                            <li>
+                                <span className="font-medium">Only current language</span>{" "}
+                                <span className="text-xs">(locale: {locale})</span> – keep the block and other languages.
+                            </li>
+                            <li>
+                                <span className="font-medium">Entire block</span> – remove this block from all languages and the layout.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteTarget(null)}
+                        >
+                            Cancel
+                        </Button>
+
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                                variant="secondary"
+                                onClick={() => performDelete("locale")}
+                            >
+                                Delete current language
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => performDelete("all")}
+                            >
+                                Delete entire block
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
@@ -1396,165 +1492,6 @@ const SpecEditor = ({
                 onChange={(e) => setFormSpec((s) => ({ ...s, sort_order: Number(e.target.value) }))}
             />
         </div>
-        <div className="flex items-center gap-2 justify-end">
-            <Button variant="outline" onClick={() => { setAddingType(null); setEditing(null); }}>Cancel</Button>
-            {editing ? <Button onClick={saveEdit}>Save</Button> : <Button onClick={saveAdd}>Create</Button>}
-        </div>
-    </div>
-);
-
-const TableEditor = ({
-    formTable, setFormTable, setAddingType, setEditing, saveAdd, saveEdit, editing
-}: {
-    formTable: {
-        title: string;
-        subtitle: string;
-        columns: string[];
-        rows: string[][];
-        notes: string;
-        sort_order: number;
-    }
-    setFormTable: React.Dispatch<React.SetStateAction<{
-        title: string;
-        subtitle: string;
-        columns: string[];
-        rows: string[][];
-        notes: string;
-        sort_order: number;
-    }>>
-    setAddingType: React.Dispatch<SetStateAction<"list" | "spec_group" | "table" | "paragraph" | null>>,
-    setEditing: React.Dispatch<React.SetStateAction<{
-        type: string;
-        id?: number | null;
-    } | null>>,
-    editing: {
-        type: string;
-        id?: number | null | undefined;
-    } | null,
-    saveAdd: () => void,
-    saveEdit: () => void
-}) => (
-    <div className="space-y-3 border rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-                <Label>Title</Label>
-                <Input value={formTable.title} onChange={(e) => setFormTable((s) => ({ ...s, title: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-                <Label>Subtitle (optional)</Label>
-                <Input value={formTable.subtitle} onChange={(e) => setFormTable((s) => ({ ...s, subtitle: e.target.value }))} />
-            </div>
-        </div>
-
-        <div className="space-y-2">
-            <Label>Columns</Label>
-            {formTable.columns.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
-                    <Input
-                        value={c}
-                        onChange={(e) =>
-                            setFormTable((s) => {
-                                const cols = s.columns.slice();
-                                cols[i] = e.target.value;
-                                return { ...s, columns: cols };
-                            })
-                        }
-                        placeholder={`Column ${i + 1}`}
-                    />
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() =>
-                            setFormTable((s) => ({ ...s, columns: s.columns.filter((_, idx) => idx !== i) }))
-                        }
-                        disabled={formTable.columns.length <= 1}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => setFormTable((s) => ({ ...s, columns: [...s.columns, ""] }))}
-            >
-                <Plus className="h-4 w-4 mr-1" /> Add Column
-            </Button>
-        </div>
-
-        <div className="space-y-2">
-            <Label>Rows</Label>
-            {formTable.rows.map((row, ri) => (
-                <div key={ri} className="flex flex-col gap-2 p-2 border rounded">
-                    <div className="flex items-center justify-between">
-                        <div className="text-xs text-muted-foreground">Row {ri + 1}</div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() =>
-                                setFormTable((s) => ({ ...s, rows: s.rows.filter((_, idx) => idx !== ri) }))
-                            }
-                            disabled={formTable.rows.length <= 1}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        {row.map((cell, ci) => (
-                            <Input
-                                key={ci}
-                                value={cell}
-                                onChange={(e) =>
-                                    setFormTable((s) => {
-                                        const rows = s.rows.map((r) => r.slice());
-                                        rows[ri][ci] = e.target.value;
-                                        return { ...s, rows };
-                                    })
-                                }
-                                placeholder={`Cell ${ci + 1}`}
-                            />
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                                setFormTable((s) => {
-                                    const rows = s.rows.map((r) => r.slice());
-                                    rows[ri] = [...rows[ri], ""];
-                                    return { ...s, rows };
-                                })
-                            }
-                        >
-                            <Plus className="h-4 w-4 mr-1" /> Add Cell
-                        </Button>
-                    </div>
-                </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => setFormTable((s) => ({ ...s, rows: [...s.rows, [""]] }))}
-            >
-                <Plus className="h-4 w-4 mr-1" /> Add Row
-            </Button>
-        </div>
-
-        <div className="space-y-1">
-            <Label>Notes (optional)</Label>
-            <Textarea rows={3} value={formTable.notes} onChange={(e) => setFormTable((s) => ({ ...s, notes: e.target.value }))} />
-        </div>
-
-        <div className="space-y-1">
-            <Label>Sort Order</Label>
-            <Input
-                type="number"
-                value={formTable.sort_order}
-                onChange={(e) => setFormTable((s) => ({ ...s, sort_order: Number(e.target.value) }))}
-            />
-        </div>
-
         <div className="flex items-center gap-2 justify-end">
             <Button variant="outline" onClick={() => { setAddingType(null); setEditing(null); }}>Cancel</Button>
             {editing ? <Button onClick={saveEdit}>Save</Button> : <Button onClick={saveAdd}>Create</Button>}

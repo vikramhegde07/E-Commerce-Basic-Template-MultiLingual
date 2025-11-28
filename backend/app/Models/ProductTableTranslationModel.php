@@ -23,4 +23,9 @@ class ProductTableTranslationModel extends BaseAppModel
         'locale'   => 'required|max_length[10]',
         'title'    => 'required|max_length[200]'
     ];
+
+    public function byTableAndLocale(int $tableId, string $locale): ?array
+    {
+        return $this->where('table_id', $tableId)->where('locale', $locale)->first();
+    }
 }

@@ -19,7 +19,7 @@ export default function ProductCard({ product }: { product: ProductLite }) {
 
     return (
         <Link
-            href={`/products/${encodeURIComponent(product.slug)}`}
+            href={`/product/${encodeURIComponent(product.slug)}`}
             className="group block rounded-2xl border border-[var(--color-border)] bg-white overflow-hidden hover:shadow-md transition-shadow"
         >
             <div className="relative aspect-[4/3] bg-slate-50">

@@ -233,139 +233,160 @@ export const SpecEditor: React.FC<SpecEditorProps> = ({
 );
 
 // --------------------------- Table Editor ---------------------------
-type TableForm = { title: string, subtitle: string, columns: string[], rows: string[][], notes: string, sort_order: number };
+type TableForm = {
+    title: string;
+    subtitle: string;
+    columns: string[];
+    rows: string[][];
+    notes: string;
+    sort_order: number;
+};
 type TableEditorProps = FormProps & {
     formTable: TableForm;
     setFormTable: React.Dispatch<React.SetStateAction<TableForm>>;
 };
 
 export const TableEditor: React.FC<TableEditorProps> = ({
-    formTable, setFormTable, editing, saveEdit, saveAdd, setAddingType, setEditing
-}) => (
-    <div className="space-y-3 border rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-                <Label>Title</Label>
-                <Input value={formTable.title} onChange={(e) => setFormTable((s) => ({ ...s, title: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-                <Label>Subtitle (optional)</Label>
-                <Input value={formTable.subtitle} onChange={(e) => setFormTable((s) => ({ ...s, subtitle: e.target.value }))} />
-            </div>
-        </div>
+    formTable,
+    setFormTable,
+    editing,
+    saveEdit,
+    saveAdd,
+    setAddingType,
+    setEditing,
+}) => {
+    const columnsValue = formTable.columns.join(", ");
 
-        <div className="space-y-2">
-            <Label>Columns</Label>
-            {formTable.columns.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
+    const rowsValue =
+        formTable.rows && formTable.rows.length
+            ? formTable.rows.map((row) => row.join(", ")).join("\n")
+            : "";
+
+    const handleColumnsChange = (value: string) => {
+        const cols = value
+            .split(",")
+            .map((c) => c.trim())
+            .filter((c) => c.length > 0);
+
+        setFormTable((s) => ({
+            ...s,
+            columns: cols.length ? cols : [""],
+        }));
+    };
+
+    const handleRowsChange = (value: string) => {
+        const lines = value.split(/\r?\n/);
+
+        const rows = lines
+            .map((line) =>
+                line
+                    .split(",")
+                    .map((c) => c.trim())
+                    .filter((c) => c.length > 0)
+            )
+            .filter((row) => row.length > 0);
+
+        setFormTable((s) => ({
+            ...s,
+            rows: rows.length ? rows : [[""]],
+        }));
+    };
+
+    return (
+        <div className="space-y-3 border rounded-lg p-4">
+            {/* Title / Subtitle */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <Label>Title</Label>
                     <Input
-                        value={c}
+                        value={formTable.title}
                         onChange={(e) =>
-                            setFormTable((s) => {
-                                const cols = s.columns.slice();
-                                cols[i] = e.target.value;
-                                return { ...s, columns: cols };
-                            })
+                            setFormTable((s) => ({ ...s, title: e.target.value }))
                         }
-                        placeholder={`Column ${i + 1}`}
                     />
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() =>
-                            setFormTable((s) => ({ ...s, columns: s.columns.filter((_, idx) => idx !== i) }))
+                </div>
+                <div className="space-y-1">
+                    <Label>Subtitle (optional)</Label>
+                    <Input
+                        value={formTable.subtitle}
+                        onChange={(e) =>
+                            setFormTable((s) => ({ ...s, subtitle: e.target.value }))
                         }
-                        disabled={formTable.columns.length <= 1}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
+                    />
                 </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => setFormTable((s) => ({ ...s, columns: [...s.columns, ""] }))}
-            >
-                <Plus className="h-4 w-4 mr-1" /> Add Column
-            </Button>
-        </div>
+            </div>
 
-        <div className="space-y-2">
-            <Label>Rows</Label>
-            {formTable.rows.map((row, ri) => (
-                <div key={ri} className="flex flex-col gap-2 p-2 border rounded">
-                    <div className="flex items-center justify-between">
-                        <div className="text-xs text-muted-foreground">Row {ri + 1}</div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() =>
-                                setFormTable((s) => ({ ...s, rows: s.rows.filter((_, idx) => idx !== ri) }))
-                            }
-                            disabled={formTable.rows.length <= 1}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        {row.map((cell, ci) => (
-                            <Input
-                                key={ci}
-                                value={cell}
-                                onChange={(e) =>
-                                    setFormTable((s) => {
-                                        const rows = s.rows.map((r) => r.slice());
-                                        rows[ri][ci] = e.target.value;
-                                        return { ...s, rows };
-                                    })
-                                }
-                                placeholder={`Cell ${ci + 1}`}
-                            />
-                        ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                                setFormTable((s) => {
-                                    const rows = s.rows.map((r) => r.slice());
-                                    rows[ri] = [...rows[ri], ""];
-                                    return { ...s, rows };
-                                })
-                            }
-                        >
-                            <Plus className="h-4 w-4 mr-1" /> Add Cell
-                        </Button>
-                    </div>
-                </div>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => setFormTable((s) => ({ ...s, rows: [...s.rows, [""]] }))}
-            >
-                <Plus className="h-4 w-4 mr-1" /> Add Row
-            </Button>
-        </div>
+            {/* Columns as CSV */}
+            <div className="space-y-1">
+                <Label>Columns (comma separated)</Label>
+                <Input
+                    value={columnsValue}
+                    onChange={(e) => handleColumnsChange(e.target.value)}
+                    placeholder="e.g. Size, Weight, Color"
+                />
+                <p className="text-xs text-muted-foreground">
+                    Type column headers separated by commas.
+                </p>
+            </div>
 
-        <div className="space-y-1">
-            <Label>Notes (optional)</Label>
-            <Textarea rows={3} value={formTable.notes} onChange={(e) => setFormTable((s) => ({ ...s, notes: e.target.value }))} />
-        </div>
+            {/* Rows as CSV per line */}
+            <div className="space-y-1">
+                <Label>Rows (one row per line, comma separated)</Label>
+                <Textarea
+                    rows={5}
+                    value={rowsValue}
+                    onChange={(e) => handleRowsChange(e.target.value)}
+                    placeholder={"Size S, 10kg, Red\nSize M, 12kg, Blue"}
+                />
+                <p className="text-xs text-muted-foreground">
+                    Each line is a row. Within a line, separate cells with commas.
+                </p>
+            </div>
 
-        <div className="space-y-1">
-            <Label>Sort Order</Label>
-            <Input
-                type="number"
-                value={formTable.sort_order}
-                onChange={(e) => setFormTable((s) => ({ ...s, sort_order: Number(e.target.value) }))}
-            />
-        </div>
+            {/* Notes */}
+            <div className="space-y-1">
+                <Label>Notes (optional)</Label>
+                <Textarea
+                    rows={3}
+                    value={formTable.notes}
+                    onChange={(e) =>
+                        setFormTable((s) => ({ ...s, notes: e.target.value }))
+                    }
+                />
+            </div>
 
-        <div className="flex items-center gap-2 justify-end">
-            <Button variant="outline" onClick={() => { setAddingType(null); setEditing(null); }}>Cancel</Button>
-            {editing ? <Button onClick={saveEdit}>Save</Button> : <Button onClick={saveAdd}>Create</Button>}
+            {/* Sort order */}
+            <div className="space-y-1">
+                <Label>Sort Order</Label>
+                <Input
+                    type="number"
+                    value={formTable.sort_order}
+                    onChange={(e) =>
+                        setFormTable((s) => ({
+                            ...s,
+                            sort_order: Number(e.target.value) || 0,
+                        }))
+                    }
+                />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 justify-end">
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        setAddingType(null);
+                        setEditing(null);
+                    }}
+                >
+                    Cancel
+                </Button>
+                {editing ? (
+                    <Button onClick={saveEdit}>Save</Button>
+                ) : (
+                    <Button onClick={saveAdd}>Create</Button>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};

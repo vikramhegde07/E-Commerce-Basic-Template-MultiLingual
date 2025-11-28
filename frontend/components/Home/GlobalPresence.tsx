@@ -10,7 +10,7 @@ type Factory = {
     name: string;
     city: string;
     country: 'UAE' | 'China';
-    badge?: string; // e.g., "Door Factory"
+    badge?: string;
 };
 
 const TEXTS = {
@@ -177,11 +177,6 @@ export default function GlobalPresence() {
 
                 {/* CTA Row */}
                 <div className="mt-8 flex flex-wrap items-center gap-3">
-                    <Link href="/contact">
-                        <Button className="bg-[var(--color-primary)] text-white opacity-90 hover:opacity-100 transition-opacity duration-300">
-                            {t.visit}
-                        </Button>
-                    </Link>
                     <Link href="/contact">
                         <Button variant="outline">{t.contact}</Button>
                     </Link>

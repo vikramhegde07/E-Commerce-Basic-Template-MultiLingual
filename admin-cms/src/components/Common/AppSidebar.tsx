@@ -12,6 +12,7 @@ import {
 
 const navItems = [
     { label: "Dashboard", to: "/", icon: LayoutDashboard },
+    { label: "Banners", to: "/banners", icon: LayoutDashboard },
     { label: "Product Categories", to: "/categories", icon: Boxes },
     { label: "Products", to: "/products", icon: Package },
     { label: "Color Cards", to: "/color-cards", icon: PaintBucket },
@@ -26,7 +27,7 @@ export default function AppSidebar() {
     return (
         <aside className="hidden md:flex w-64 bg-white border-r flex-col">
             <div className="h-16 flex items-center px-4 font-semibold text-lg border-b">
-                Hatim-Al-Anwar
+                Primeconnects
             </div>
             <nav className="flex-1 overflow-y-auto py-4">
                 <ul className="space-y-1">

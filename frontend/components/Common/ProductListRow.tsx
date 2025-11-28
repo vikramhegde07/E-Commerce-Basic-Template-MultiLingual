@@ -20,7 +20,7 @@ export default function ProductListRow({ p }: { p: ProductLite }) {
 
     return (
         <Link
-            href={`/products/${encodeURIComponent(p.slug)}`}
+            href={`/product/${encodeURIComponent(p.slug)}`}
             className="rounded-2xl border bg-white overflow-hidden hover:shadow-sm transition"
         >
             <div className="grid grid-cols-3 gap-0">

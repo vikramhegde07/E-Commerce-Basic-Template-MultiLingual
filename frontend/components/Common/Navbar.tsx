@@ -5,7 +5,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
     Menu, X, Phone, Mail, HeadphonesIcon, Search,
-    Linkedin, Instagram, Facebook, XIcon
+    Linkedin, Instagram, Facebook, XIcon,
+    Download
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { api } from '@/lib/axios';
@@ -13,9 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LanguageSwitcher from '@/components/Common/LanguageSwitcher';
 import { useLanguage } from '@/context/LanguageContext';
+import { BrochureDownload } from './BrochureDownload';
 
 const TEXTS = {
     en: {
+        companyName: "Prime Connects Doors & Cabinet Solutions",
         home: 'Home',
         corePanels: 'Core Panels',
         categories: 'Categories',
@@ -26,8 +29,10 @@ const TEXTS = {
         seeAll: 'See all →',
         followUs: 'Follow us:',
         salesSupport: 'Sales & Support',
+        downloadAll: 'Download Brochures'
     },
     ar: {
+        companyName: "برايم كونيكتس حلول للأبواب والخزائن",
         home: 'الرئيسية',
         corePanels: 'ألواح النواة',
         categories: 'الفئات',
@@ -38,8 +43,10 @@ const TEXTS = {
         seeAll: 'عرض الكل →',
         followUs: 'تابعنا:',
         salesSupport: 'المبيعات والدعم',
+        downloadAll: 'تحميل الكتيّب'
     },
     zh: {
+        companyName: "Prime Connects 门柜解决方案",
         home: '首页',
         corePanels: '核心板',
         categories: '分类',
@@ -50,6 +57,7 @@ const TEXTS = {
         seeAll: '查看全部 →',
         followUs: '关注我们：',
         salesSupport: '销售与支持',
+        downloadAll: '下载宣传册'
     },
 } as const;
 
@@ -101,7 +109,7 @@ export default function Navbar() {
             try {
                 // If your backend expects category_slug, adjust accordingly:
                 const r = await api.get('/api/products', {
-                    params: { category: 'doors', limit: 8, sortBy: 'created_at', order: 'DESC', locale },
+                    params: { category_slug: 'core-panels', limit: 8, sortBy: 'created_at', order: 'DESC', locale },
                 });
                 setCoreList(r.data?.data ?? []);
             } catch {
@@ -136,8 +144,6 @@ export default function Navbar() {
         router.push(`/products?${params.toString()}`);
     };
 
-    const companyName = 'Primeconnects';
-
     return (
         <header className="w-full border-b bg-[var(--color-bg)]" dir={dir}>
             {/* Top bar */}
@@ -146,12 +152,15 @@ export default function Navbar() {
                     <a href="mailto:info@primeconnects.com" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
                         <Mail size={14} /> info@primeconnects.ae
                     </a>
-                    <a href="tel:+15551234567" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
-                        <Phone size={14} /> +1 (555) 123-4567
+                    <a href="mailto:abde@primeconnects.com" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
+                        <Mail size={14} /> abde@primeconnects.ae
                     </a>
-                    <Link href="/support" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
-                        <HeadphonesIcon size={14} /> {t.salesSupport}
-                    </Link>
+                    <a href="tel:+971589126137" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
+                        <Phone size={14} /> +971 58 912 6137
+                    </a>
+                    <a href="tel:+971065733816" className="flex items-center gap-1 transition-opacity duration-300 hover:opacity-80">
+                        <Phone size={14} /> +971 06 573 3816
+                    </a>
                 </div>
                 <div className="flex flex-row flex-wrap items-center gap-3">
                     <span className="opacity-80">{t.followUs}</span>
@@ -179,7 +188,12 @@ export default function Navbar() {
                         <Link href="/" className="inline-flex items-center gap-2">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="/images/21.png" className="h-12 w-12 rounded-lg bg-[var(--color-primary)]/10" alt="Primeconnects logo" />
-                            <span className="font-semibold leading-tight">{companyName}</span>
+                            <div className='flex flex-col'>
+                                <span className="font-semibold leading-tight">{TEXTS.ar.companyName}</span>
+                                {locale !== 'ar' && (
+                                    <span className="font-semibold leading-tight">{t.companyName}</span>
+                                )}
+                            </div>
                         </Link>
                     </div>
 
@@ -197,8 +211,13 @@ export default function Navbar() {
                         </Button>
                     </form>
 
-                    <div className="hidden md:flex items-center gap-2">
-                        <LanguageSwitcher />
+                    <div className='flex gap-2 flex-row flex-wrap'>
+                        <div className="hidden md:flex items-center gap-2">
+                            <LanguageSwitcher />
+                        </div>
+                        <div className="hidden md:flex items-center gap-2">
+                            <BrochureDownload />
+                        </div>
                     </div>
                 </div>
 
@@ -231,7 +250,7 @@ export default function Navbar() {
                         onMouseLeave={closeCore}
                     >
                         <Link
-                            href="/products?category=doors"
+                            href="/products?category_slug=core-panels"
                             className="px-4 py-2 transition-colors duration-300 hover:text-[var(--color-primary)]"
                         >
                             {t.corePanels}
@@ -250,7 +269,7 @@ export default function Navbar() {
                                             {coreList.slice(0, 5).map((p) => (
                                                 <li key={p.id} className="py-2 px-3">
                                                     <Link
-                                                        href={`/products/${p.slug}`}
+                                                        href={`/product/${p.slug}`}
                                                         className="block transition-colors duration-300 hover:text-[var(--color-primary)]"
                                                     >
                                                         {p.name}
@@ -259,7 +278,7 @@ export default function Navbar() {
                                             ))}
                                             <li className="py-2 px-3 text-right">
                                                 <Link
-                                                    href="/products?category=doors"
+                                                    href="/products?category_slug=core-panels"
                                                     className="text-xs underline"
                                                 >
                                                     {t.seeAll}
@@ -339,8 +358,13 @@ export default function Navbar() {
                     <aside className="absolute right-0 top-0 h-full w-[85%] max-w-sm bg-white shadow-2xl p-4 overflow-y-auto">
                         <div className="flex items-center justify-between mb-4">
                             <Link href="/" className="inline-flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-                                <div className="h-8 w-8 rounded-lg bg-[var(--color-primary)]/10" />
-                                <span className="font-semibold">Primeconnects</span>
+                                <img src="/images/21.png" className="h-12 w-12 rounded-lg bg-[var(--color-primary)]/10" alt="Primeconnects logo" />
+                                <div className="flex flex-col">
+                                    <span className="font-semibold leading-tight">{TEXTS.ar.companyName}</span>
+                                    {locale !== 'ar' && (
+                                        <span className="font-semibold leading-tight">{t.companyName}</span>
+                                    )}
+                                </div>
                             </Link>
                             <Button
                                 variant="outline"
@@ -356,7 +380,7 @@ export default function Navbar() {
                             <Link href="/" className="block py-2" onClick={() => setMobileOpen(false)}>
                                 {t.home}
                             </Link>
-                            <Link href="/products?category=doors" className="block py-2" onClick={() => setMobileOpen(false)}>
+                            <Link href="/products?category_slug=core-panels" className="block py-2" onClick={() => setMobileOpen(false)}>
                                 {t.corePanels}
                             </Link>
                             <Link href="/categories" className="block py-2" onClick={() => setMobileOpen(false)}>
@@ -373,8 +397,13 @@ export default function Navbar() {
                             </Link>
                         </nav>
 
-                        <div className="mt-6">
-                            <LanguageSwitcher />
+                        <div className='flex gap-2 flex-row flex-wrap mt-6'>
+                            <div className="md:hidden flex items-center gap-2">
+                                <LanguageSwitcher />
+                            </div>
+                            <div className="md:hidden flex items-center gap-2">
+                                <BrochureDownload />
+                            </div>
                         </div>
                     </aside>
                 </div>

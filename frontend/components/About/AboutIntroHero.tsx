@@ -56,11 +56,6 @@ export default function AboutIntroHero({
 
                 <div className="mt-6 flex flex-wrap gap-3">
                     <Link href="/contact">
-                        <Button className="bg-[var(--color-primary)] text-white opacity-90 hover:opacity-100 transition-opacity duration-300">
-                            {t.ctaPrimary}
-                        </Button>
-                    </Link>
-                    <Link href="/contact">
                         <Button variant="outline">{t.ctaSecondary}</Button>
                     </Link>
                 </div>

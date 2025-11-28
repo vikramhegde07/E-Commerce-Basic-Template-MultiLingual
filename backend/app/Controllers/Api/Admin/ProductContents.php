@@ -5,6 +5,10 @@ namespace App\Controllers\Api\Admin;
 use App\Controllers\BaseController;
 use App\Models\ProductModel;
 use App\Services\ProductLayoutService;
+use App\Models\ProductListTranslationModel;
+use App\Models\ProductContentParagraphTranslationModel;
+use App\Models\ProductSpecGroupTranslationModel;
+use App\Models\ProductTableTranslationModel;
 
 class ProductContents extends BaseController
 {
@@ -251,6 +255,56 @@ class ProductContents extends BaseController
         return $this->response->setJSON(['deleted' => ['list_id' => $listId]]);
     }
 
+    // DELETE /api/admin/products/{productId}/contents/lists/{listId}/{locale}
+    public function deleteListLocale($productId = null, $listId = null, $locale = null)
+    {
+        $productId = (int) $productId;
+        $listId    = (int) $listId;
+        $locale    = (string) $locale;
+
+        // Basic guard
+        if (empty($locale)) {
+            return $this->response
+                ->setStatusCode(400)
+                ->setJSON(['error' => 'Locale is required']);
+        }
+
+        // Ensure product exists
+        $this->ensureProductExists($productId);
+
+        $db = \Config\Database::connect();
+
+        // Ensure that this list actually belongs to this product
+        if (!$this->ensureListOwnership($db, $productId, $listId)) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'List not found']);
+        }
+
+        $translationModel = new ProductListTranslationModel();
+
+        // Find translation for this list + locale
+        $translation = $translationModel->byListAndLocale($listId, $locale);
+
+        if (!$translation) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Translation not found for this locale']);
+        }
+
+        // Deleting this translation will cascade to product_list_items
+        // through your DB FK constraints.
+        $translationModel->delete($translation['id']);
+
+        return $this->response->setJSON([
+            'deleted' => [
+                'list_id' => $listId,
+                'locale'  => $locale,
+                'translation_id' => $translation['id'],
+            ],
+        ]);
+    }
+
     // =========================================================
     //                       SPEC GROUPS
     // =========================================================
@@ -431,6 +485,54 @@ class ProductContents extends BaseController
         return $this->response->setJSON(['deleted' => ['group_id' => $groupId]]);
     }
 
+    // DELETE /api/admin/products/{productId}/contents/spec-groups/{groupId}/{locale}
+    public function deleteSpecGroupLocale($productId = null, $groupId = null, $locale = null)
+    {
+        $productId = (int) $productId;
+        $groupId    = (int) $groupId;
+        $locale    = (string) $locale;
+
+        // Basic guard
+        if (empty($locale)) {
+            return $this->response
+                ->setStatusCode(400)
+                ->setJSON(['error' => 'Locale is required']);
+        }
+
+        // Ensure product exists
+        $this->ensureProductExists($productId);
+
+        $db = \Config\Database::connect();
+
+        // Ensure that this list actually belongs to this product
+        if (!$this->ensureSpecGroupOwnership($db, $productId, $groupId)) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Specs Group not found']);
+        }
+
+        $translationModel = new ProductSpecGroupTranslationModel();
+
+        // Find translation for this Spec Group + locale
+        $translation = $translationModel->byGroupAndLocale($groupId, $locale);
+
+        if (!$translation) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Translation not found for this locale']);
+        }
+
+        $translationModel->delete($translation['id']);
+
+        return $this->response->setJSON([
+            'deleted' => [
+                'list_id' => $groupId,
+                'locale'  => $locale,
+                'translation_id' => $translation['id'],
+            ],
+        ]);
+    }
+
     // =========================================================
     //                       TABLES
     // =========================================================
@@ -559,6 +661,54 @@ class ProductContents extends BaseController
         ProductLayoutService::removeBlockByRef($productId, 'table', $tableId);
         $db->table('product_tables')->where('id', $tableId)->delete(); // cascades translations
         return $this->response->setJSON(['deleted' => ['table_id' => $tableId]]);
+    }
+
+    // DELETE /api/admin/products/{productId}/contents/tables/{tableId}/{locale}
+    public function deleteTableLocale($productId = null, $tableId = null, $locale = null)
+    {
+        $productId = (int) $productId;
+        $tableId    = (int) $tableId;
+        $locale    = (string) $locale;
+
+        // Basic guard
+        if (empty($locale)) {
+            return $this->response
+                ->setStatusCode(400)
+                ->setJSON(['error' => 'Locale is required']);
+        }
+
+        // Ensure product exists
+        $this->ensureProductExists($productId);
+
+        $db = \Config\Database::connect();
+
+        // Ensure that this list actually belongs to this product
+        if (!$this->ensureTableOwnership($db, $productId, $tableId)) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Table not found', "table id" => $tableId]);
+        }
+
+        $translationModel = new ProductTableTranslationModel();
+
+        // Find translation for this list + locale
+        $translation = $translationModel->byTableAndLocale($tableId, $locale);
+
+        if (!$translation) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Translation not found for this locale', "table id" => $tableId]);
+        }
+
+        $translationModel->delete($translation['id']);
+
+        return $this->response->setJSON([
+            'deleted' => [
+                'list_id' => $tableId,
+                'locale'  => $locale,
+                'translation_id' => $translation['id'],
+            ],
+        ]);
     }
 
     // =========================================================
@@ -693,5 +843,53 @@ class ProductContents extends BaseController
         ProductLayoutService::removeBlockByRef($productId, 'content_paragraph', $paragraphId);
         $db->table('product_content_paragraphs')->where('id', $paragraphId)->delete(); // cascades translations
         return $this->response->setJSON(['deleted' => ['paragraph_id' => $paragraphId]]);
+    }
+
+    // DELETE /api/admin/products/{productId}/contents/tables/{paragraphId}/{locale}
+    public function deleteParagraphLocale($productId = null, $paragraphId = null, $locale = null)
+    {
+        $productId = (int) $productId;
+        $paragraphId    = (int) $paragraphId;
+        $locale    = (string) $locale;
+
+        // Basic guard
+        if (empty($locale)) {
+            return $this->response
+                ->setStatusCode(400)
+                ->setJSON(['error' => 'Locale is required']);
+        }
+
+        // Ensure product exists
+        $this->ensureProductExists($productId);
+
+        $db = \Config\Database::connect();
+
+        // Ensure that this list actually belongs to this product
+        if (!$this->ensureParagraphOwnership($db, $productId, $paragraphId)) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'List not found']);
+        }
+
+        $translationModel = new ProductContentParagraphTranslationModel();
+
+        // Find translation for this list + locale
+        $translation = $translationModel->byParaAndLocale($paragraphId, $locale);
+
+        if (!$translation) {
+            return $this->response
+                ->setStatusCode(404)
+                ->setJSON(['error' => 'Translation not found for this locale']);
+        }
+
+        $translationModel->delete($translation['id']);
+
+        return $this->response->setJSON([
+            'deleted' => [
+                'list_id' => $paragraphId,
+                'locale'  => $locale,
+                'translation_id' => $translation['id'],
+            ],
+        ]);
     }
 }

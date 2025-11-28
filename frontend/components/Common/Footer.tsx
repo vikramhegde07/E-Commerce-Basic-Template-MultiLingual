@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
     return (
-        <footer className="bg-[var(--color-footer-bg)] text-[var(--color-footer-text)] pt-12 pb-6 mt-20">
+        <footer className="bg-[var(--color-footer-bg)] text-[var(--color-footer-text)] pt-12 pb-6">
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
                 {/* --- Sitemap --- */}
@@ -55,9 +55,9 @@ export default function Footer() {
             <div className="border-t border-[var(--color-border)]/10 mt-10 pt-6 text-center text-sm text-[var(--color-footer-text)]">
                 © {new Date().getFullYear()}{" "}
                 <span className="text-[var(--color-footer-link)] font-medium">
-                    Your Company Name
+                    Primeconnects
                 </span>
-                . All rights reserved.
+                . All rights reserved. | Powred By <a href="https://zetacoding.com" target="_blank" className="hover:underine text-(--color-secondary)">Zetacoding</a>
             </div>
         </footer>
     );
